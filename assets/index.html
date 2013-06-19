@@ -1,0 +1,35 @@
+<html>
+<script type="text/javascript" src="./js/underscore.js"></script>
+<script type="text/javascript" src="./js/backbone.js"></script>
+<script type="text/javascript" src="./js/backbone-relational.js"></script>
+
+<script>
+
+Node = Backbone.RelationalModel.extend({
+  defaults : {
+    'name' : ''
+  },
+
+  relations: [{
+    type: Backbone.HasMany,
+    key: 'children',
+    relatedModel: 'Node',
+    collectionType: 'NodeCollection',
+    reverseRelation: {
+      key: 'parentNode',
+      includeInJSON: false
+    }
+  }]
+});
+
+NodeCollection = Backbone.Collection.extend({
+  model: Node
+});
+
+var network = new Node();
+network.get('children').add(new Node());
+
+console.log( network );
+console.log( network.toJSON() );
+</script>
+</html>
