@@ -1,170 +1,174 @@
 <html>
 <head>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
-    <script type="text/javascript" src="./js/underscore.js"></script>
-    <script type="text/javascript" src="./js/backbone.js"></script>
-    <script type="text/javascript" src="./js/backbone-relational.js"></script>
-    <style>
-    body
-    {
-	font-family:Arial;
-    }
-    
-    h2
-    {
-	float:left;
-	width:70%;
-	margin:0px;
-	padding:0px;
-    }
-    .key
-    {
-	color:blue;
+  <script type="text/javascript" src="./js/jquery-1.10.1.js"></script>
+  <script type="text/javascript" src="./js/underscore.js"></script>
+  <script type="text/javascript" src="./js/backbone.js"></script>
+  <script type="text/javascript" src="./js/backbone-relational.js"></script>
+  <style>
+    <!-- @Karthik lets try to keep the css formatted this way -->
+    body {
+      font-family:Arial;
     }
 
-    .string
-    {
-	color:green;
+    h2 {
+      float:left;
+      width:70%;
+      margin:0px;
+      padding:0px;
     }
 
-    #sidebar
-    {
-	width:30%;
-	float:right;
+    .key {
+      color:blue;
     }
 
-    #json_structure
-    {
-	width:70%;
-	float:left;
+    .string {
+      color:green;
     }
 
-    #nodelist
-    {
-	list-style:none;
+    #sidebar {
+      width:30%;
+      float:right;
     }
 
-    #nodelist li
-    {
-	margin:5px;
-	background:#727272;
-	color:#FFF;
-	float:left;
-	width:90%;
-	padding:5%;
-	border-radius:10px;
+    #json_structure {
+      width:70%;
+      float:left;
     }
 
-    #nodelist li span
-    {
-	cursor:pointer;
-	float:right;
-	display:block;
-	width:auto;
-	margin:0px 5px;
+    #nodelist {
+      list-style:none;
     }
-    </style>
+
+    #nodelist li {
+      margin:5px;
+      background:#727272;
+      color:#FFF;
+      float:left;
+      width:90%;
+      padding:5%;
+      border-radius:10px;
+    }
+
+    #nodelist li span {
+      cursor:pointer;
+      float:right;
+      display:block;
+      width:auto;
+      margin:0px 5px;
+    }
+  </style>
 </head>
 <body>
-    <h2>JSON</h2>
-    <div id='json_structure'></div>
-    <div id="sidebar"><h2>Add/Remove Nodes</h2><ul id="nodelist"></ul></div>
+  <h2>JSON</h2>
+  <div id='json_structure'></div>
+  <div id="sidebar"><h2>Add/Remove Nodes</h2><ul id="nodelist"></ul></div>
 
-<script>
-NodeCollection = Backbone.Collection.extend({
-    model : Node,
-    initialize: function(){
-		    this.on("add",function(){
-			document.getElementById("json_structure").innerHTML = prettyPrint(this.toJSON());
-		    });
-		    this.on("remove",function(){
-			document.getElementById("json_structure").innerHTML = prettyPrint(this.toJSON());
-		    });
-		    this.counter=0;
-		    }
-});
+  <script>
+    //
+    //-- Defining our collections
+    //
+    NodeCollection = Backbone.Collection.extend({
+        model : Node,
+        initialize: function() {
+          this.on("add", function() {
+            $json_structure.html( prettyPrint(this.toJSON()) );
+          });
 
-var network = new NodeCollection;
+          this.on("remove",function() {
+            $json_structure.html( prettyPrint(this.toJSON()) );
+          });
 
-Node = Backbone.RelationalModel.extend({
-  defaults : {
-    'name' : ''
-  },
-  initialize: function(){
-		    network.add(this);
-		    this.bind("add:children",function(){
-			document.getElementById("json_structure").innerHTML = prettyPrint(network.toJSON());
-		    });
-	    },
-  relations: [{
-    type: Backbone.HasMany,
-    key: 'children',
-    relatedModel: 'Node',
-    reverseRelation: {
-      key: 'parentNode',
-      includeInJSON: false
-    }
-  }]
-});
+          this.counter = 0;
+        }
+    });
 
-//View to manipulate each single node
-NodeRow = Backbone.View.extend({
-    tagName: 'li',
-    events: {
-      'click span.addchildren':  'addChildren',
-      'click span.delete': 'remove'
-    },   
-    initialize: function(){
-      _.bindAll(this, 'render', 'remove', 'addChildren');
-	
-      this.model.bind('change', this.render);
-      this.model.bind('remove', this.remove);
-    },
-    render: function(){
-      $(this.el).html(this.model.get('name')+'<span class="addchildren">Add Children</span><span class="delete">Remove</span>');
-      return this; 
-    },
-    remove: function(){
-	if(network.length>1)
-	{
-	    $(this.el).remove();
-	    this.model.destroy();   
-	}
-    },
-    addChildren: function(){
-	this.model.get('children').add({'name':'Node'+network.counter});
-	network.counter++;
-    }
-});
-
-//View to manipulate and display list of all nodes in collection
-
-NodeList = Backbone.View.extend({
-    el: $('#nodelist'),	
-  initialize: function() {
-    this.collection.bind('add', this.onModelAdded);
-  },
-  AddModel: function(){
-      var tempNode = new Node({'name':'Node'+network.counter});
-      network.counter++;
-      var newNodeRow = new NodeRow({
-        model: tempNode
-      });
-    $('ul',this.el).append(newNodeRow.render().el);
-      
+    //
+    //-- Defining our models
+    //
+    Node = Backbone.RelationalModel.extend({
+      defaults : {
+        'name' : ''
       },
-  onModelAdded: function(addedModel) {
-      var newNodeRow = new NodeRow({
-        model: addedModel
-      });
-    $('ul',this.el).append(newNodeRow.render().el);
-  }
-});
+      initialize: function() {
+        network_coll.add(this);
+        this.bind("add:children", function() {
+          $json_structure.html( prettyPrint(network_coll.toJSON()) );
+        });
+      },
 
-var MyNodeList = new NodeList({ collection: network });
-var node = new Node({'name':'ROOT'});
+      relations: [{
+        type: Backbone.HasMany,
+        key: 'children',
+        relatedModel: 'Node',
+        reverseRelation: {
+          key: 'parentNode',
+          includeInJSON: false
+        }
+      }]
+    });
 
-//Pretty Print JSON.
+    //
+    //-- Defining our views
+    //
+    NodeRow = Backbone.View.extend({
+      //-- View to manipulate each single node
+      tagName: 'li',
+      events: {
+        'click span.addchildren'  : 'addChildren',
+        'click span.delete'       : 'remove'
+      },
+
+      initialize: function(){
+        _.bindAll(this, 'render', 'remove', 'addChildren');
+
+        this.model.bind('change', this.render);
+        this.model.bind('remove', this.remove);
+      },
+
+      render: function(){
+        $(this.el).html(this.model.get('name')+'<span class="addchildren">Add Children</span><span class="delete">Remove</span>');
+        return this;
+      },
+
+      remove: function(){
+        if(network_coll.length > 1) {
+          $(this.el).remove();
+          this.model.destroy();
+        }
+      },
+
+      addChildren: function(){
+        this.model.get('children').add({'name' : 'Node'+network_coll.counter});
+        network_coll.counter++;
+      }
+    });
+
+    NodeList = Backbone.View.extend({
+      //-- View to manipulate and display list of all nodes in collection
+      el: $('#nodelist'),	
+      initialize: function() {
+        this.collection.bind('add', this.onModelAdded);
+      },
+
+      AddModel: function(){
+        var tempNode = new Node({'name' : 'Node'+network_coll.counter});
+        network_coll.counter++;
+        var newNodeRow = new NodeRow({ model: tempNode });
+        $('ul', this.el).append(newNodeRow.render().el);
+      },
+
+      onModelAdded: function(addedModel) {
+        var newNodeRow = new NodeRow({ model: addedModel });
+        $('ul',this.el).append(newNodeRow.render().el);
+      }
+    });
+
+    //
+    //-- Utilities / Helpers
+    //
+
+//-- Pretty Print JSON.
+//-- @Karthik do you have a reference/source for this function?
 function prettyPrint(json) {
     if (typeof json != 'string') {
          json = JSON.stringify(json, undefined, 2);
@@ -185,7 +189,34 @@ function prettyPrint(json) {
         }
 	return '<span class="' + cls + '">' + match + '</span>';
     });
-}
+  }
+
+    //
+    //-- App init!
+    //
+    var $json_structure = $('#json_structure'),
+        network_coll = new NodeCollection,
+        MyNodeList = new NodeList({ collection: network_coll }),
+        node = new Node({'name':'ROOT'});
+
+    //-- TASKS / IDEAS:
+    //-- Might be fun to have a 'autogenerate network with X nodes and X tiers' random function, not exactly
+    //-- relevant to the exact task at hand but might make you more comertable with how to leverage this collection/model structure
+
+    //-- To note, please look at the formatting differences I made, we want to make sure the code says clean (and to help with the fact that I need to read it)
+
+    //-- I hate html in long strings! Have you ever used a templating system? Underscore has one built right in: http://underscorejs.org/#template
+    //-- (TODO) convert the views to using them.
+
+    //-- (TODO) Question to ask yourself about network_coll.counter, do you really need it? Hint: http://puff.me.uk/ss/B0DvC.png
+
+    //-- (TODO) Look at todomvc.com ( http://puff.me.uk/ss/onq8U.png ) and play with how they double-click to edit the task name. 
+    //-- I want to be able to do the same for NodeNames then have an event to update the network on input or blur events of that input element
+
+    //-- (TODO) Can we get some twitter bootstrap <3?
+
+    //-- AWESOME START!
+
 </script>
 
 </body>
