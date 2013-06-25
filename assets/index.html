@@ -1,20 +1,105 @@
 <html>
-<script type="text/javascript" src="./js/underscore.js"></script>
-<script type="text/javascript" src="./js/backbone.js"></script>
-<script type="text/javascript" src="./js/backbone-relational.js"></script>
+<head>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+    <script type="text/javascript" src="./js/underscore.js"></script>
+    <script type="text/javascript" src="./js/backbone.js"></script>
+    <script type="text/javascript" src="./js/backbone-relational.js"></script>
+    <style>
+    body
+    {
+	font-family:Arial;
+    }
+    
+    h2
+    {
+	float:left;
+	width:70%;
+	margin:0px;
+	padding:0px;
+    }
+    .key
+    {
+	color:blue;
+    }
+
+    .string
+    {
+	color:green;
+    }
+
+    #sidebar
+    {
+	width:30%;
+	float:right;
+    }
+
+    #json_structure
+    {
+	width:70%;
+	float:left;
+    }
+
+    #nodelist
+    {
+	list-style:none;
+    }
+
+    #nodelist li
+    {
+	margin:5px;
+	background:#727272;
+	color:#FFF;
+	float:left;
+	width:90%;
+	padding:5%;
+	border-radius:10px;
+    }
+
+    #nodelist li span
+    {
+	cursor:pointer;
+	float:right;
+	display:block;
+	width:auto;
+	margin:0px 5px;
+    }
+    </style>
+</head>
+<body>
+    <h2>JSON</h2>
+    <div id='json_structure'></div>
+    <div id="sidebar"><h2>Add/Remove Nodes</h2><ul id="nodelist"></ul></div>
 
 <script>
+NodeCollection = Backbone.Collection.extend({
+    model : Node,
+    initialize: function(){
+		    this.on("add",function(){
+			document.getElementById("json_structure").innerHTML = prettyPrint(this.toJSON());
+		    });
+		    this.on("remove",function(){
+			document.getElementById("json_structure").innerHTML = prettyPrint(this.toJSON());
+		    });
+		    this.counter=0;
+		    }
+});
+
+var network = new NodeCollection;
 
 Node = Backbone.RelationalModel.extend({
   defaults : {
     'name' : ''
   },
-
+  initialize: function(){
+		    network.add(this);
+		    this.bind("add:children",function(){
+			document.getElementById("json_structure").innerHTML = prettyPrint(network.toJSON());
+		    });
+	    },
   relations: [{
     type: Backbone.HasMany,
     key: 'children',
     relatedModel: 'Node',
-    collectionType: 'NodeCollection',
     reverseRelation: {
       key: 'parentNode',
       includeInJSON: false
@@ -22,14 +107,84 @@ Node = Backbone.RelationalModel.extend({
   }]
 });
 
-NodeCollection = Backbone.Collection.extend({
-  model: Node
+//View to manipulate each single node
+NodeRow = Backbone.View.extend({
+    tagName: 'li',
+    events: {
+      'click span.addchildren':  'addChildren',
+      'click span.delete': 'remove'
+    },   
+    initialize: function(){
+      _.bindAll(this, 'render', 'remove', 'addChildren');
+
+      this.model.bind('change', this.render);
+      this.model.bind('remove', this.remove);
+    },
+    render: function(){
+      $(this.el).html(this.model.get('name')+'<span class="addchildren">Add Children</span><span class="delete">Remove</span>');
+      return this; 
+    },
+    remove: function(){
+	$(this.el).remove();
+      this.model.destroy();
+    },
+    addChildren: function(){
+	this.model.get('children').add({'name':'Node'+network.counter});
+	network.counter++;
+    }
 });
 
-var network = new Node();
-network.get('children').add(new Node());
+//View to manipulate and display list of all nodes in collection
 
-console.log( network );
-console.log( network.toJSON() );
+NodeList = Backbone.View.extend({
+    el: $('#nodelist'),	
+  initialize: function() {
+    this.collection.bind('add', this.onModelAdded);
+  },
+  AddModel: function(){
+      var tempNode = new Node({'name':'Node'+network.counter});
+      network.counter++;
+      var newNodeRow = new NodeRow({
+        model: tempNode
+      });
+    $('ul',this.el).append(newNodeRow.render().el);
+      
+      },
+  onModelAdded: function(addedModel) {
+      var newNodeRow = new NodeRow({
+        model: addedModel
+      });
+    $('ul',this.el).append(newNodeRow.render().el);
+  }
+});
+
+var MyNodeList = new NodeList({ collection: network });
+var node = new Node({'name':'Root Node'});
+node.get('children').add(new Node({'name':'First child'}));
+
+//Pretty Print JSON.
+function prettyPrint(json) {
+    if (typeof json != 'string') {
+         json = JSON.stringify(json, undefined, 2);
+    }
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        var cls = 'number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'key';
+            } else {
+                cls = 'string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'boolean';
+        } else if (/null/.test(match)) {
+            cls = 'null';
+        }
+	return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
 </script>
+
+</body>
 </html>
