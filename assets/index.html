@@ -116,7 +116,7 @@ NodeRow = Backbone.View.extend({
     },   
     initialize: function(){
       _.bindAll(this, 'render', 'remove', 'addChildren');
-
+	
       this.model.bind('change', this.render);
       this.model.bind('remove', this.remove);
     },
@@ -125,8 +125,11 @@ NodeRow = Backbone.View.extend({
       return this; 
     },
     remove: function(){
-	$(this.el).remove();
-      this.model.destroy();
+	if(network.length>1)
+	{
+	    $(this.el).remove();
+	    this.model.destroy();   
+	}
     },
     addChildren: function(){
 	this.model.get('children').add({'name':'Node'+network.counter});
@@ -159,8 +162,7 @@ NodeList = Backbone.View.extend({
 });
 
 var MyNodeList = new NodeList({ collection: network });
-var node = new Node({'name':'Root Node'});
-node.get('children').add(new Node({'name':'First child'}));
+var node = new Node({'name':'ROOT'});
 
 //Pretty Print JSON.
 function prettyPrint(json) {
