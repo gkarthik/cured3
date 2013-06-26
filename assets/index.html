@@ -200,20 +200,23 @@ function prettyPrint(json) {
 
     //-- To note, please look at the formatting differences I made, we want to make sure the code says clean (and to help with the fact that I need to read it)
     //-- (WILL DO)
-    
-    //-- I hate html in long strings! Have you ever used a templating system? Underscore has one built right in: http://underscorejs.org/#template
-    //-- (TODO) convert the views to using them. 
-    //-- (DONE)
 
     //-- (TODO) Question to ask yourself about network_coll.counter, do you really need it? Hint: http://puff.me.uk/ss/B0DvC.png.
     //-- (DONE) - Used network_coll.length to monitor number of models in the collection. I just have to ask, what is puff.me.uk? Some ftp server?
+    //-- ALMOST THERE
 
-    //-- (TODO) Look at todomvc.com ( http://puff.me.uk/ss/onq8U.png ) and play with how they double-click to edit the task name. 
-    //-- I want to be able to do the same for NodeNames then have an event to update the network on input or blur events of that input element
-    //-- (DONE)
-    
-    //-- (TODO) Can we get some twitter bootstrap <3?
-    //-- (DONE) Looks way better.
+    //-- (TODO) _ templates not in a big string but using a script
+
+    //-- (TODO) - "smarter" name convention to suggest depth level as well
+    //          - also currently parentNode == null so that will have to be fixed to 
+    //          - to access parent
+
+    //-- (TODO) - keep this.options around on node to act as a storage area for metadata
+
+    //-- (TODO) - convert $json_structure.html() into d3 drawing
+
+    //-- (TODO) - On click of d3 node, get the model repersentation of that in Backbone collection
+
 
     //-- AWESOME START!
 
