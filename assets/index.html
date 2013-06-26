@@ -1,67 +1,34 @@
 <html>
 <head>
+  <link href='./css/bootstrap.min.css' rel='stylesheet' type='text/css'>
+  <style>
+  input.edit{
+      display:none;
+  }
+  .editing .name {
+      display: none; /* Hides label text when .editing*/
+  }
+  .editing input.edit {
+      display: inline; /* Shows input text box when .editing*/
+  }
+  </style>
   <script type="text/javascript" src="./js/jquery-1.10.1.js"></script>
   <script type="text/javascript" src="./js/underscore.js"></script>
   <script type="text/javascript" src="./js/backbone.js"></script>
   <script type="text/javascript" src="./js/backbone-relational.js"></script>
-  <style>
-    <!-- @Karthik lets try to keep the css formatted this way -->
-    body {
-      font-family:Arial;
-    }
-
-    h2 {
-      float:left;
-      width:70%;
-      margin:0px;
-      padding:0px;
-    }
-
-    .key {
-      color:blue;
-    }
-
-    .string {
-      color:green;
-    }
-
-    #sidebar {
-      width:30%;
-      float:right;
-    }
-
-    #json_structure {
-      width:70%;
-      float:left;
-    }
-
-    #nodelist {
-      list-style:none;
-    }
-
-    #nodelist li {
-      margin:5px;
-      background:#727272;
-      color:#FFF;
-      float:left;
-      width:90%;
-      padding:5%;
-      border-radius:10px;
-    }
-
-    #nodelist li span {
-      cursor:pointer;
-      float:right;
-      display:block;
-      width:auto;
-      margin:0px 5px;
-    }
-  </style>
 </head>
 <body>
-  <h2>JSON</h2>
-  <div id='json_structure'></div>
-  <div id="sidebar"><h2>Add/Remove Nodes</h2><ul id="nodelist"></ul></div>
+<div class="container-fluid">
+  <div class="row-fluid">
+    <div class="span4">
+      <div id="sidebar"><h2>Add/Remove Nodes</h2><ul id="nodelist"></ul></div>  
+    </div>
+    <div class="span8">
+	<h2>JSON</h2>
+	<div id='json_structure'></div>
+    </div>
+  </div>
+</div>
 
   <script>
     //
@@ -77,8 +44,6 @@
           this.on("remove",function() {
             $json_structure.html( prettyPrint(this.toJSON()) );
           });
-
-          this.counter = 0;
         }
     });
 
@@ -92,6 +57,9 @@
       initialize: function() {
         network_coll.add(this);
         this.bind("add:children", function() {
+          $json_structure.html( prettyPrint(network_coll.toJSON()) );
+        });
+	this.bind("change:name", function() {
           $json_structure.html( prettyPrint(network_coll.toJSON()) );
         });
       },
@@ -108,14 +76,22 @@
     });
 
     //
+    //-- Defining our templates
+    //
+    var nodeTemplate = _.template('<span class="name"><%= name %></span><input type="text" class="edit" value="<%- name %>"><button class="btn btn-small btn-link addchildren" type="button">Add Children</button><button class="btn btn-small btn-link delete" href="#"><i class="icon-remove"></i></button>');
+    
+    //
     //-- Defining our views
     //
     NodeRow = Backbone.View.extend({
       //-- View to manipulate each single node
       tagName: 'li',
       events: {
-        'click span.addchildren'  : 'addChildren',
-        'click span.delete'       : 'remove'
+        'click button.addchildren'  : 'addChildren',
+        'click button.delete'       : 'remove',
+	'dblclick .name': 'edit',
+	'keypress .edit' : 'updateOnEnter',
+        'blur .edit' : 'close'
       },
 
       initialize: function(){
@@ -126,20 +102,39 @@
       },
 
       render: function(){
-        $(this.el).html(this.model.get('name')+'<span class="addchildren">Add Children</span><span class="delete">Remove</span>');
+        $(this.el).html(nodeTemplate({'name':this.model.get('name')}));
+	this.input = this.$('.edit');
         return this;
       },
-
+      
+      updateOnEnter: function(e){
+        if(e.which == 13){
+          this.close();
+        }
+      },
+      
+      close: function(){
+        var value = this.input.val().trim();
+        if(value) {
+          this.model.set('name', value);
+        }
+        this.$el.removeClass('editing');
+      },            
+      
+      edit: function(){
+	this.$el.addClass('editing');
+        this.input.focus();
+      },
+      
       remove: function(){
-        if(network_coll.length > 1) {
+        if(network_coll.models.length > 1) {
           $(this.el).remove();
           this.model.destroy();
         }
       },
 
       addChildren: function(){
-        this.model.get('children').add({'name' : 'Node'+network_coll.counter});
-        network_coll.counter++;
+        this.model.get('children').add({'name' : 'Node'+network_coll.models.length});
       }
     });
 
@@ -151,8 +146,8 @@
       },
 
       AddModel: function(){
-        var tempNode = new Node({'name' : 'Node'+network_coll.counter});
-        network_coll.counter++;
+        var tempNode = new Node({'name' : 'Node'+network_coll.models.length});
+        
         var newNodeRow = new NodeRow({ model: tempNode });
         $('ul', this.el).append(newNodeRow.render().el);
       },
@@ -204,16 +199,21 @@ function prettyPrint(json) {
     //-- relevant to the exact task at hand but might make you more comertable with how to leverage this collection/model structure
 
     //-- To note, please look at the formatting differences I made, we want to make sure the code says clean (and to help with the fact that I need to read it)
-
+    //-- (WILL DO)
+    
     //-- I hate html in long strings! Have you ever used a templating system? Underscore has one built right in: http://underscorejs.org/#template
-    //-- (TODO) convert the views to using them.
+    //-- (TODO) convert the views to using them. 
+    //-- (DONE)
 
-    //-- (TODO) Question to ask yourself about network_coll.counter, do you really need it? Hint: http://puff.me.uk/ss/B0DvC.png
+    //-- (TODO) Question to ask yourself about network_coll.counter, do you really need it? Hint: http://puff.me.uk/ss/B0DvC.png.
+    //-- (DONE) - Used network_coll.length to monitor number of models in the collection. I just have to ask, what is puff.me.uk? Some ftp server?
 
     //-- (TODO) Look at todomvc.com ( http://puff.me.uk/ss/onq8U.png ) and play with how they double-click to edit the task name. 
     //-- I want to be able to do the same for NodeNames then have an event to update the network on input or blur events of that input element
-
+    //-- (DONE)
+    
     //-- (TODO) Can we get some twitter bootstrap <3?
+    //-- (DONE) Looks way better.
 
     //-- AWESOME START!
 
