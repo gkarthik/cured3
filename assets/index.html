@@ -1,5 +1,7 @@
 <html>
 <head>
+  <!DOCTYPE html>
+  <meta charset="utf-8">
   <link href='./css/bootstrap.min.css' rel='stylesheet' type='text/css'>
   <style>
   input.edit{
@@ -11,25 +13,56 @@
   .editing input.edit {
       display: inline; /* Shows input text box when .editing*/
   }
+  .node circle {
+      fill: #fff;
+      stroke: steelblue;
+      stroke-width: 1.5px;
+  } 
+
+  .node {
+      font: 10px sans-serif;
+  }
+
+  .link {
+      fill: none;
+      stroke: #ccc;
+      stroke-width: 1.5px;
+  }
   </style>
-  <script type="text/javascript" src="./js/jquery-1.10.1.js"></script>
-  <script type="text/javascript" src="./js/underscore.js"></script>
-  <script type="text/javascript" src="./js/backbone.js"></script>
-  <script type="text/javascript" src="./js/backbone-relational.js"></script>
 </head>
 <body>
 <div class="container-fluid">
   <div class="row-fluid">
-    <div class="span4">
+    <div class="span3">
       <div id="sidebar"><h2>Add/Remove Nodes</h2><ul id="nodelist"></ul></div>  
     </div>
-    <div class="span8">
-	<h2>JSON</h2>
-	<div id='json_structure'></div>
+    <div class="span2">
+	     <h2>JSON</h2>
+	     <div id='json_structure'></div>
+    </div>
+    <div class="span7">
+	     <svg id="networkwrapper"></svg>
     </div>
   </div>
-</div>
+</div>   
 
+  <script id="nodeTemplate" type="text/template">
+    <span class="name">
+  	  <%= name %>
+    </span>
+    <input type="text" class="edit" value="<%- name %>">
+    <button class="btn btn-small btn-link addchildren" type="button">
+      Add Children
+    </button>
+    <button class="btn btn-small btn-link delete" href="#">
+      <i class="icon-remove"></i>
+    </button>
+  </script>
+  <script type="text/javascript" src="./js/jquery-1.10.1.js"></script>
+  <script type="text/javascript" src="./js/underscore.js"></script>
+  <script type="text/javascript" src="./js/backbone.js"></script>
+  <script type="text/javascript" src="./js/backbone-relational.js"></script>
+  <script type="text/javascript" src="./js/d3.v3.js" charset="utf-8">></script>
   <script>
     //
     //-- Defining our collections
@@ -38,11 +71,12 @@
         model : Node,
         initialize: function() {
           this.on("add", function() {
-            $json_structure.html( prettyPrint(this.toJSON()) );
+            $json_structure.html( prettyPrint(this.toJSON()[0]) );
+            render_network(this.toJSON()[0]);
           });
-
           this.on("remove",function() {
-            $json_structure.html( prettyPrint(this.toJSON()) );
+            $json_structure.html( prettyPrint(this.toJSON()[0]) );
+            render_network(this.toJSON()[0]);
           });
         }
     });
@@ -52,18 +86,22 @@
     //
     Node = Backbone.RelationalModel.extend({
       defaults : {
-        'name' : ''
+        'name' : '',
+        'options':{
+		  content:''
+        }
       },
       initialize: function() {
         network_coll.add(this);
         this.bind("add:children", function() {
-          $json_structure.html( prettyPrint(network_coll.toJSON()) );
+          $json_structure.html( prettyPrint(network_coll.toJSON()[0]) );
+          render_network(network_coll.toJSON()[0]);
         });
-	this.bind("change:name", function() {
-          $json_structure.html( prettyPrint(network_coll.toJSON()) );
+		this.bind("change:name", function() {
+          $json_structure.html( prettyPrint(network_coll.toJSON()[0]) );
+          render_network(network_coll.toJSON()[0]);
         });
       },
-
       relations: [{
         type: Backbone.HasMany,
         key: 'children',
@@ -78,7 +116,8 @@
     //
     //-- Defining our templates
     //
-    var nodeTemplate = _.template('<span class="name"><%= name %></span><input type="text" class="edit" value="<%- name %>"><button class="btn btn-small btn-link addchildren" type="button">Add Children</button><button class="btn btn-small btn-link delete" href="#"><i class="icon-remove"></i></button>');
+    var html = $("#nodeTemplate").html();
+    var nodeTemplate = _.template(html);
     
     //
     //-- Defining our views
@@ -89,30 +128,26 @@
       events: {
         'click button.addchildren'  : 'addChildren',
         'click button.delete'       : 'remove',
-	'dblclick .name': 'edit',
-	'keypress .edit' : 'updateOnEnter',
+		'dblclick .name': 'edit',
+		'keypress .edit' : 'updateOnEnter',
         'blur .edit' : 'close'
       },
-
       initialize: function(){
         _.bindAll(this, 'render', 'remove', 'addChildren');
 
         this.model.bind('change', this.render);
         this.model.bind('remove', this.remove);
       },
-
       render: function(){
         $(this.el).html(nodeTemplate({'name':this.model.get('name')}));
-	this.input = this.$('.edit');
+		this.input = this.$('.edit');
         return this;
       },
-      
       updateOnEnter: function(e){
         if(e.which == 13){
           this.close();
         }
       },
-      
       close: function(){
         var value = this.input.val().trim();
         if(value) {
@@ -120,38 +155,29 @@
         }
         this.$el.removeClass('editing');
       },            
-      
       edit: function(){
-	this.$el.addClass('editing');
+		this.$el.addClass('editing');
         this.input.focus();
       },
-      
       remove: function(){
-        if(network_coll.models.length > 1) {
+        if(network_coll.length > 1) {
           $(this.el).remove();
           this.model.destroy();
         }
       },
-
       addChildren: function(){
-        this.model.get('children').add({'name' : 'Node'+network_coll.models.length});
+      	var newNode = new Node({'name' : 'Node'+network_coll.length, 'options':{ 'content': '' }});
+      	newNode.parentNode = this.model;
+        this.model.get('children').add(newNode);
       }
     });
-
+    
     NodeList = Backbone.View.extend({
       //-- View to manipulate and display list of all nodes in collection
       el: $('#nodelist'),	
       initialize: function() {
         this.collection.bind('add', this.onModelAdded);
       },
-
-      AddModel: function(){
-        var tempNode = new Node({'name' : 'Node'+network_coll.models.length});
-        
-        var newNodeRow = new NodeRow({ model: tempNode });
-        $('ul', this.el).append(newNodeRow.render().el);
-      },
-
       onModelAdded: function(addedModel) {
         var newNodeRow = new NodeRow({ model: addedModel });
         $('ul',this.el).append(newNodeRow.render().el);
@@ -164,14 +190,14 @@
 
 //-- Pretty Print JSON.
 //-- @Karthik do you have a reference/source for this function?
-function prettyPrint(json) {
-    if (typeof json != 'string') {
-         json = JSON.stringify(json, undefined, 2);
-    }
-    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        var cls = 'number';
-        if (/^"/.test(match)) {
+    function prettyPrint(json) {
+      if (typeof json != 'string') {
+           json = JSON.stringify(json, undefined, 2);
+      }
+      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+    	var cls = 'number';
+          if (/^"/.test(match)) {
             if (/:$/.test(match)) {
                 cls = 'key';
             } else {
@@ -182,13 +208,85 @@ function prettyPrint(json) {
         } else if (/null/.test(match)) {
             cls = 'null';
         }
-	return '<span class="' + cls + '">' + match + '</span>';
-    });
-  }
+	  return '<span class="' + cls + '">' + match + '</span>';
+      });
+    }
+    
+    //
+    //-- Render d3 Network
+    //
+    function render_network(dataset)
+    {
+      var nodes = cluster.nodes(dataset),
+          links = cluster.links(nodes);
+      nodes.forEach(function(d) { d.y = d.depth * 130; });
+      var node = svg.selectAll("g.node")
+        .data(nodes);
+      var nodeEnter= node.enter().append("svg:g")
+        .attr("class", "node")
+        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+      var nodeUpdate = node.transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+      nodeEnter.append("svg:rect")
+        .attr("x", -25)
+        .attr("y", -15)
+        .attr("height", 30)
+        .attr("width", 50)
+        .style("fill","steelblue");
+      nodeEnter.append("text")
+        .attr("dx",0)
+        .attr("dy",3.5)
+        .style("fill","#FFF")
+        .style("text-anchor", function(d) { return "middle";} )
+        .text(function(d) { console.log(d.name);return d.name; });
+      var nodeExit = node.exit().transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + dataset.y + "," + dataset.x + ")"; })
+        .remove();
+      var link = svg.selectAll(".link")
+        .data(links);
+      link.enter()
+        .insert("svg:path", "g")
+        .attr("class", "link")
+        .attr("d", function(d) {
+          var o = {x: dataset.x0, y: dataset.y0};
+          return diagonal({source: o, target: o});
+        });
+      link.transition()
+        .duration(duration)
+        .attr("d", diagonal);
+      link.exit().transition()
+        .duration(duration)
+        .attr("d", function(d) {
+          var o = {x: dataset.x, y: dataset.y};
+          return diagonal({source: o, target: o});
+        })
+      .remove();
+      nodes.forEach(function(d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+    }
 
     //
     //-- App init!
     //
+    var width = 600,
+      height = 600,
+      duration = 500;
+    
+    var cluster = d3.layout.tree()
+      .size([height, width]);
+      
+    var diagonal = d3.svg.diagonal()
+      .projection(function(d) { return [d.x, d.y]; });
+
+    var svg = d3.select("svg").attr("width", width)
+      .attr("height", height)
+      .append("svg:g")
+      .attr("transform", "translate(0,40)");
+      
     var $json_structure = $('#json_structure'),
         network_coll = new NodeCollection,
         MyNodeList = new NodeList({ collection: network_coll }),
@@ -204,23 +302,25 @@ function prettyPrint(json) {
     //-- (TODO) Question to ask yourself about network_coll.counter, do you really need it? Hint: http://puff.me.uk/ss/B0DvC.png.
     //-- (DONE) - Used network_coll.length to monitor number of models in the collection. I just have to ask, what is puff.me.uk? Some ftp server?
     //-- ALMOST THERE
+    //-- (DONE)
 
     //-- (TODO) _ templates not in a big string but using a script
+    //-- (DONE)
 
     //-- (TODO) - "smarter" name convention to suggest depth level as well
     //          - also currently parentNode == null so that will have to be fixed to 
     //          - to access parent
 
     //-- (TODO) - keep this.options around on node to act as a storage area for metadata
+    //-- (DONE)
 
     //-- (TODO) - convert $json_structure.html() into d3 drawing
+    //-- (ALMOST THERE)
 
     //-- (TODO) - On click of d3 node, get the model repersentation of that in Backbone collection
 
-
     //-- AWESOME START!
 
-</script>
-
+  </script>
 </body>
 </html>

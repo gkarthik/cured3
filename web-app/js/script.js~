@@ -1,0 +1,77 @@
+//author gkarthik
+var json = {name: "1", children : [{name:"2",children : [{name:"4",children : [] },{name:"5",children : [] }] },{name:"3",children : [] }]};
+var ctr = 6;
+var width = 500,
+    height = 400;
+    
+var cluster = d3.layout.tree()
+    .size([height, width-160]);
+
+var diagonal = d3.svg.diagonal()
+    .projection(function(d) { return [d.x, d.y]; });
+
+var svg = d3.select("body").append("svg").attr("width", width)
+				    .attr("height", height)
+				    .append("g")
+				    .attr("transform", "translate(0,40)");
+render_tree(json);
+
+function render_tree(dataset)
+{
+var nodes = cluster.nodes(dataset),
+    links = cluster.links(nodes);
+
+var link = svg.selectAll(".link")
+	      .data(links)
+	      .enter().append("path")
+	      .attr("class", "link")
+	      .attr("d", diagonal);
+
+
+var node = svg.selectAll(".node")
+              .data(nodes)
+              .enter().append("g")
+              .attr("class", "node")
+	      .attr("id",function(d){ return "node"+d.name; })
+              .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
+	    
+node.append("svg:rect")
+    .attr("x", -25)
+    .attr("y", -15)
+    .attr("height", 30)
+    .attr("width", 50)
+    .style("fill","steelblue");
+    
+
+node.append("text")
+    .attr("dx",3)
+    .attr("dy",3.5)
+    .style("fill","#FFF")
+    .style("text-anchor", function(d) { return "end";} )
+    .text(function(d) { return d.name; });
+}
+
+d3.selectAll(".node").on("dblclick",function(d){
+    console.log(d3.selectAll("#node"+d.name).data());
+    d3.selectAll("#node"+d.name).data()[0].children.push({'name': ctr,'children':[]});
+    ctr++;
+    render_tree(json);
+});
+
+function add_to_json(source,name)
+{
+	if(source["name"]==name)
+	{
+	   source["children"].push({name: ctr, children : [] }); 
+	   console.log(source["children"]);
+	   ctr++;
+	}
+	
+	if(source["children"].length>0)
+	{
+	    for(var temp in source["children"])
+	    {
+		add_to_json(source["children"][temp],name);
+	    }
+	}
+}
