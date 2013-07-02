@@ -30,7 +30,7 @@ function render_tree(dataset)
       
       var nodeEnter= node.enter().append("svg:g")
         .attr("class", "node")
-        .attr("id",function(d){ return "node"+d.name; })
+        .attr("id",function(d){ return d.name; })
         .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
       
       nodeEnter.append("svg:rect")
@@ -45,7 +45,7 @@ function render_tree(dataset)
         .attr("dy",3.5)
         .style("fill","#FFF")
         .style("text-anchor", function(d) { return "end";} )
-        .text(function(d) { return d.name; });
+        .text(function(d) { console.log(d.name);return d.name; });
       
       var nodeUpdate = node.transition()
       .duration(duration)
@@ -54,17 +54,13 @@ function render_tree(dataset)
       var link = svg.selectAll(".link")
         .data(links)
      
-      link.enter().insert("svg:path", "g")
+      link.enter().insert("path", "g")
       .attr("class", "link")
       .attr("d", function(d) {
         var o = {x: dataset.x0, y: dataset.y0};
         return diagonal({source: o, target: o});
       })
-    .transition()
-      .duration(duration)
-      .attr("d", diagonal);
-      
-      link.transition()
+      .transition()
       .duration(duration)
       .attr("d", diagonal);
       
@@ -75,7 +71,6 @@ function render_tree(dataset)
     }
 
 d3.selectAll(".node").on("dblclick",function(d){
-    console.log(d3.selectAll("#node"+d.name).data());
     d3.selectAll("#node"+d.name).data()[0].children.push({'name': ctr,'children':[]});
     ctr++;
     render_tree(json);

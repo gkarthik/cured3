@@ -97,7 +97,7 @@
           $json_structure.html( prettyPrint(network_coll.toJSON()[0]) );
           render_network(network_coll.toJSON()[0]);
         });
-		this.bind("change:name", function() {
+		    this.bind("change:name", function() {
           $json_structure.html( prettyPrint(network_coll.toJSON()[0]) );
           render_network(network_coll.toJSON()[0]);
         });
@@ -128,8 +128,8 @@
       events: {
         'click button.addchildren'  : 'addChildren',
         'click button.delete'       : 'remove',
-		'dblclick .name': 'edit',
-		'keypress .edit' : 'updateOnEnter',
+		    'dblclick .name': 'edit',
+		    'keypress .edit' : 'updateOnEnter',
         'blur .edit' : 'close'
       },
       initialize: function(){
@@ -166,7 +166,17 @@
         }
       },
       addChildren: function(){
-      	var newNode = new Node({'name' : 'Node'+network_coll.length, 'options':{ 'content': '' }});
+        var name = 0;
+        if(this.model.parentNode==null)
+        {
+          name = branch;
+          branch++;
+        }
+        else
+        {
+          name = this.model.get('name')+"."+this.model.get('children').length;
+        }
+      	var newNode = new Node({'name' : name, 'options':{ 'content': '' }});
       	newNode.parentNode = this.model;
         this.model.get('children').add(newNode);
       }
@@ -191,6 +201,7 @@
 //-- Pretty Print JSON.
 //-- @Karthik do you have a reference/source for this function?
     function prettyPrint(json) {
+      console.log("1");
       if (typeof json != 'string') {
            json = JSON.stringify(json, undefined, 2);
       }
@@ -217,6 +228,7 @@
     //
     function render_network(dataset)
     {
+      console.log(dataset);
       var nodes = cluster.nodes(dataset),
           links = cluster.links(nodes);
       nodes.forEach(function(d) { d.y = d.depth * 130; });
@@ -224,9 +236,6 @@
         .data(nodes);
       var nodeEnter= node.enter().append("svg:g")
         .attr("class", "node")
-        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-      var nodeUpdate = node.transition()
-        .duration(duration)
         .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
       nodeEnter.append("svg:rect")
         .attr("x", -25)
@@ -239,7 +248,12 @@
         .attr("dy",3.5)
         .style("fill","#FFF")
         .style("text-anchor", function(d) { return "middle";} )
-        .text(function(d) { console.log(d.name);return d.name; });
+        .text(function(d) { return d.name; });
+      var nodeUpdate = node.transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });     
+      nodeUpdate.select("text")
+        .text(function(d) { return d.name; });
       var nodeExit = node.exit().transition()
         .duration(duration)
         .attr("transform", function(d) { return "translate(" + dataset.y + "," + dataset.x + ")"; })
@@ -274,23 +288,20 @@
     //
     var width = 600,
       height = 600,
-      duration = 500;
-    
-    var cluster = d3.layout.tree()
-      .size([height, width]);
-      
-    var diagonal = d3.svg.diagonal()
-      .projection(function(d) { return [d.x, d.y]; });
-
-    var svg = d3.select("svg").attr("width", width)
-      .attr("height", height)
-      .append("svg:g")
-      .attr("transform", "translate(0,40)");
-      
+      duration = 500,
+      cluster = d3.layout.tree()
+                  .size([height, width]),
+      diagonal = d3.svg.diagonal()
+                   .projection(function(d) { return [d.x, d.y]; });
+      svg = d3.select("svg").attr("width", width)
+              .attr("height", height)
+              .append("svg:g")
+              .attr("transform", "translate(0,40)");
     var $json_structure = $('#json_structure'),
         network_coll = new NodeCollection,
         MyNodeList = new NodeList({ collection: network_coll }),
-        node = new Node({'name':'ROOT'});
+        node = new Node({'name':'ROOT'})
+        branch = 1;
 
     //-- TASKS / IDEAS:
     //-- Might be fun to have a 'autogenerate network with X nodes and X tiers' random function, not exactly
@@ -310,12 +321,13 @@
     //-- (TODO) - "smarter" name convention to suggest depth level as well
     //          - also currently parentNode == null so that will have to be fixed to 
     //          - to access parent
+    //-- (DONE)
 
     //-- (TODO) - keep this.options around on node to act as a storage area for metadata
     //-- (DONE)
 
     //-- (TODO) - convert $json_structure.html() into d3 drawing
-    //-- (ALMOST THERE)
+    //-- (DONE)
 
     //-- (TODO) - On click of d3 node, get the model repersentation of that in Backbone collection
 
