@@ -7,17 +7,20 @@
   input.edit{
       display:none;
   }
+
   .editing .name {
       display: none; /* Hides label text when .editing*/
   }
+
   .editing input.edit {
       display: inline; /* Shows input text box when .editing*/
   }
+
   .node circle {
       fill: #fff;
       stroke: steelblue;
       stroke-width: 1.5px;
-  } 
+  }
 
   .node {
       font: 10px sans-serif;
@@ -37,18 +40,18 @@
       <div id="sidebar"><h2>Add/Remove Nodes</h2><ul id="nodelist"></ul></div>  
     </div>
     <div class="span2">
-	     <h2>JSON</h2>
-	     <div id='json_structure'></div>
+       <h2>JSON</h2>
+       <div id='json_structure'></div>
     </div>
     <div class="span7">
-	     <svg id="networkwrapper"></svg>
+       <svg id="networkwrapper"></svg>
     </div>
   </div>
-</div>   
+</div>
 
   <script id="nodeTemplate" type="text/template">
     <span class="name">
-  	  <%= name %>
+      <%= name %>
     </span>
     <input type="text" class="edit" value="<%- name %>">
     <button class="btn btn-small btn-link addchildren" type="button">
@@ -87,8 +90,8 @@
     Node = Backbone.RelationalModel.extend({
       defaults : {
         'name' : '',
-        'options':{
-		  content:''
+        'options' : {
+          content:''
         }
       },
       initialize: function() {
@@ -116,9 +119,9 @@
     //
     //-- Defining our templates
     //
-    var html = $("#nodeTemplate").html();
-    var nodeTemplate = _.template(html);
-    
+    var html = $("#nodeTemplate").html(),
+        nodeTemplate = _.template(html);
+
     //
     //-- Defining our views
     //
@@ -128,8 +131,8 @@
       events: {
         'click button.addchildren'  : 'addChildren',
         'click button.delete'       : 'remove',
-		    'dblclick .name': 'edit',
-		    'keypress .edit' : 'updateOnEnter',
+        'dblclick .name': 'edit',
+        'keypress .edit' : 'updateOnEnter',
         'blur .edit' : 'close'
       },
       initialize: function(){
@@ -140,7 +143,7 @@
       },
       render: function(){
         $(this.el).html(nodeTemplate({'name':this.model.get('name')}));
-		this.input = this.$('.edit');
+        this.input = this.$('.edit');
         return this;
       },
       updateOnEnter: function(e){
@@ -154,9 +157,9 @@
           this.model.set('name', value);
         }
         this.$el.removeClass('editing');
-      },            
+      },
       edit: function(){
-		this.$el.addClass('editing');
+        this.$el.addClass('editing');
         this.input.focus();
       },
       remove: function(){
@@ -167,24 +170,21 @@
       },
       addChildren: function(){
         var name = 0;
-        if(this.model.parentNode==null)
-        {
+        if(this.model.parentNode==null) {
           name = branch;
           branch++;
-        }
-        else
-        {
+        } else {
           name = this.model.get('name')+"."+this.model.get('children').length;
         }
-      	var newNode = new Node({'name' : name, 'options':{ 'content': '' }});
-      	newNode.parentNode = this.model;
+        var newNode = new Node({'name' : name, 'options':{ 'content': '' }});
+        newNode.parentNode = this.model;
         this.model.get('children').add(newNode);
       }
     });
-    
+
     NodeList = Backbone.View.extend({
       //-- View to manipulate and display list of all nodes in collection
-      el: $('#nodelist'),	
+      el: $('#nodelist'),
       initialize: function() {
         this.collection.bind('add', this.onModelAdded);
       },
@@ -207,7 +207,7 @@
       }
       json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-    	var cls = 'number';
+        var cls = 'number';
           if (/^"/.test(match)) {
             if (/:$/.test(match)) {
                 cls = 'key';
@@ -219,10 +219,10 @@
         } else if (/null/.test(match)) {
             cls = 'null';
         }
-	  return '<span class="' + cls + '">' + match + '</span>';
+        return '<span class="' + cls + '">' + match + '</span>';
       });
     }
-    
+
     //
     //-- Render d3 Network
     //
@@ -287,16 +287,16 @@
     //-- App init!
     //
     var width = 600,
-      height = 600,
-      duration = 500,
-      cluster = d3.layout.tree()
-                  .size([height, width]),
-      diagonal = d3.svg.diagonal()
-                   .projection(function(d) { return [d.x, d.y]; });
-      svg = d3.select("svg").attr("width", width)
-              .attr("height", height)
-              .append("svg:g")
-              .attr("transform", "translate(0,40)");
+        height = 600,
+        duration = 500,
+        cluster = d3.layout.tree()
+                    .size([height, width]),
+        diagonal = d3.svg.diagonal()
+                    .projection(function(d) { return [d.x, d.y]; });
+        svg = d3.select("svg").attr("width", width)
+                .attr("height", height)
+                .append("svg:g")
+                .attr("transform", "translate(0,40)");
     var $json_structure = $('#json_structure'),
         network_coll = new NodeCollection,
         MyNodeList = new NodeList({ collection: network_coll }),
@@ -330,6 +330,12 @@
     //-- (DONE)
 
     //-- (TODO) - On click of d3 node, get the model repersentation of that in Backbone collection
+
+    //-- (TODO) - input event for name update
+
+    //-- (TODO) - attributes to literal objects
+
+    //-- (TODO) - question of d3 >> search through backbone || backbone with paths to draw networks
 
     //-- AWESOME START!
 
