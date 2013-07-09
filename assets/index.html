@@ -20,6 +20,9 @@
   
   #svgwrapper div{
     z-index:3;
+    position:absolute;
+    border:2px solid steelblue;
+    border-radius:5px;
   }
   input.edit{
       display:none;
@@ -48,6 +51,17 @@
       stroke: #ccc;
       stroke-width: 1.5px;
   }
+  .btn{
+    margin:0px;
+    padding:0px;
+    float:left;
+  }
+  .name
+  {
+    display:block;
+    text-align:center;
+    color: steelblue;
+  }
   </style>
 </head>
 <body>
@@ -72,7 +86,7 @@
     </span>
     <input type="text" class="edit" value="<%- name %>">
     <button class="btn btn-small btn-link addchildren" type="button">
-      Add Children
+      <i class="icon-plus-sign"></i>
     </button>
     <button class="btn btn-small btn-link delete" href="#">
       <i class="icon-remove"></i>
@@ -91,6 +105,7 @@
         model : Node,
         initialize: function() {
           this.on("remove",function() {
+            updatepositions();
             $json_structure.html( prettyPrint(this.toJSON()[0]) );
             render_network(this.toJSON()[0]);
           });
@@ -107,6 +122,7 @@
           content:''
         }
       },
+      url: "./",
       initialize: function() {     
         this.bind("add:children", function() {
           updatepositions();
@@ -156,7 +172,11 @@
       },
       render: function(){
         $(this.el).html(nodeTemplate({'name':this.model.get('name')}));
-        $(this.el).css({'position':'absolute','margin-left': this.model.get('x')+"px", 'margin-top': this.model.get('y')+"px"});        
+        if(this.model.get('x0')!=undefined)
+        {
+          $(this.el).css({'margin-left': this.model.get('x0')+"px", 'margin-top': this.model.get('y0')+"px"});          
+        }    
+        $(this.el).stop(false,true).animate({'margin-left': this.model.get('x')+"px", 'margin-top': this.model.get('y')+"px"},"fast");        
         this.input = this.$('.edit');
         return this;
       },
@@ -179,6 +199,7 @@
       remove: function(){
         if(network_coll.length > 1) {
           $(this.el).remove();
+          delete_all_children(this.model); 
           this.model.destroy();
         }
       },
@@ -243,14 +264,41 @@
     {
       var d3nodes = cluster.nodes(network_coll.toJSON()[0]);
       d3nodes.forEach(function(d) { d.y = d.depth * 130; });
+      d3nodes.forEach(function(d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
       for(var temp in network_coll["models"])
       {
-        network_coll["models"][temp].set("x",d3nodes[temp].x);
-        network_coll["models"][temp].set("y",d3nodes[temp].y);
-        network_coll["models"][temp].set("x0",d3nodes[temp].x0);
-        network_coll["models"][temp].set("y0",d3nodes[temp].y0);
+        for(var innerTemp in d3nodes)
+        {
+          if(String(d3nodes[innerTemp].name)==String(network_coll["models"][temp].get('name')))
+          {
+            network_coll["models"][temp].set("x",d3nodes[innerTemp].x);
+            network_coll["models"][temp].set("y",d3nodes[innerTemp].y);
+            network_coll["models"][temp].set("x0",d3nodes[innerTemp].x0);
+            network_coll["models"][temp].set("y0",d3nodes[innerTemp].y0);   
+          }
+        }
+      }  
+    }
+    
+    //
+    //-- Function to delete all children of a node
+    //
+    function delete_all_children(seednode)
+    {
+      var children = seednode.get('children');
+      if(seednode.get('children').length>0)
+      {
+        for(var temp in children.models)
+        {
+          delete_all_children(children.models[temp]);
+          children.models[temp].destroy();
+        }
       }
     }
+    
     //
     //-- Render d3 Network
     //
