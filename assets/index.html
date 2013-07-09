@@ -104,6 +104,12 @@
     NodeCollection = Backbone.Collection.extend({
         model : Node,
         initialize: function() {
+          //This add is for the seed node alone.      
+          this.on("add",function(){
+            updatepositions();
+            $json_structure.html( prettyPrint(this.toJSON()[0]) );
+            render_network(this.toJSON()[0]);
+          });
           this.on("remove",function() {
             updatepositions();
             $json_structure.html( prettyPrint(this.toJSON()[0]) );
