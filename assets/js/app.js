@@ -83,7 +83,7 @@
           $(this.el).css({'margin-left': this.model.get('x0')+"px", 
                           'margin-top': this.model.get('y0')+"px"});          
         }    
-        $(this.el).stop(false,true).animate({'margin-left': (this.model.get('x')-(($(this.el).width()+16)/2))+"px", 
+        $(this.el).stop(false,true).animate({'margin-left': (this.model.get('x')-(($(this.el).width())/2))+"px", 
                                              'margin-top': (this.model.get('y')+10)+"px"},"slow");        
         this.input = this.$('.edit');
         return this;
@@ -171,7 +171,7 @@
     function updatepositions()
     {
       var d3nodes = cluster.nodes(network_coll.toJSON()[0]);
-      d3nodes.forEach(function(d) { d.y = d.depth * 130; });
+      d3nodes.forEach(function(d) { d.y = d.depth * 130 ;});
       d3nodes.forEach(function(d) {
         d.x0 = d.x;
         d.y0 = d.y;
@@ -223,9 +223,6 @@
         .attr("d", function(d) {
           var o = {x: dataset.x0, y: dataset.y0};
           return diagonal({source: o, target: o});
-        })
-        .style("transform",function(d){
-          return "translate(0,"+(d.depth*10)+")";
         });
       link.transition()
         .duration(duration)
