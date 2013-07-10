@@ -27,6 +27,10 @@ svg{
 
 input.edit{
   display:none;
+  padding:0px;
+  font-size:13px;
+  width:100%;
+  text-align:center;
 }
 
 .editing .name {
