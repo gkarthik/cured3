@@ -132,7 +132,14 @@
         newNodeElement.render();
       }
     });
-
+    
+    //
+    //-- Regions
+    //
+    
+    AppRegion = new Backbone.Marionette.Region({
+      el: "#svgwrapper"
+    });
     //
     //-- Utilities / Helpers
     //
@@ -253,10 +260,11 @@
     var $json_structure = $('#json_structure'),
         network_coll = new NodeCollection;
         MyNodeList = new NodeList({ collection: network_coll });
-        AppRegion = new Backbone.Marionette.Region({
-          el: "#svgwrapper"
-        });
+    
+    //Assign View to Region
     AppRegion.show(MyNodeList);
+    
+    //Add Model to Collection
     var node = new Node({'name':'ROOT'})
         branch = 1;
     
