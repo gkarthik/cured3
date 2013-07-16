@@ -1,4 +1,9 @@
     //
+    //-- Defining the App
+    //
+    Cure = new Backbone.Marionette.Application();
+    
+    //
     //-- Defining our collections
     //
     NodeCollection = Backbone.Collection.extend({
@@ -6,14 +11,12 @@
         initialize: function() {
           //This add is for the seed node alone.      
           this.on("add",function(){
-            updatepositions();
-            $json_structure.html( prettyPrint(this.toJSON()[0]) );
-            render_network(this.toJSON()[0]);
+            Cure.updatepositions();
+            Cure.render_network(this.toJSON()[0]);
           });
           this.on("remove",function() {
-            updatepositions();
-            $json_structure.html( prettyPrint(this.toJSON()[0]) );
-            render_network(this.toJSON()[0]);
+            Cure.updatepositions();
+            Cure.render_network(this.toJSON()[0]);
           });
         }
     });
@@ -29,17 +32,15 @@
         }
       },
       url: "./",
-      initialize: function() {     
+      initialize: function() {
+        Cure.NodeCollection.add(this);      
         this.bind("add:children", function() {
-          updatepositions();
-          $json_structure.html( prettyPrint(network_coll.toJSON()[0]) );
-          render_network(network_coll.toJSON()[0]);          
+          Cure.updatepositions();
+          Cure.render_network(Cure.NodeCollection.toJSON()[0]);          
         });
         this.bind("change:name", function() {
-          $json_structure.html( prettyPrint(network_coll.toJSON()[0]) );
-          render_network(network_coll.toJSON()[0]);
-        });
-        network_coll.add(this);           
+          Cure.render_network(Cure.NodeCollection.toJSON()[0]);
+        });          
       },
       relations: [{
         type: Backbone.HasMany,
@@ -55,7 +56,7 @@
     //
     //-- Defining our views
     //
-    NodeElement = Backbone.Marionette.ItemView.extend({
+    NodeView = Backbone.Marionette.ItemView.extend({
       //-- View to manipulate each single node
       tagName: 'div',
       ui: {
@@ -101,17 +102,17 @@
         this.ui.input.focus();
       },
       remove: function(){
-        if(network_coll.length > 1) {
+        if(Cure.NodeCollection.length > 1) {
           $(this.el).remove();
-          delete_all_children(this.model); 
+          Cure.delete_all_children(this.model); 
           this.model.destroy();
         }
       },
       addChildren: function(){
         var name = 0;
         if(this.model.parentNode==null) {
-          name = branch;
-          branch++;
+          name = Cure.branch;
+          Cure.branch++;
         } else {
           name = this.model.get('name')+"."+this.model.get('children').length;
         }
@@ -121,32 +122,38 @@
       }
     });
 
-    NodeList = Backbone.Marionette.CollectionView.extend({
+    NodeCollectionView = Backbone.Marionette.CollectionView.extend({
       //-- View to manipulate and display list of all nodes in collection
-      itemView: NodeElement,
+      itemView: NodeView,
       initialize: function() {
         this.collection.bind('add', this.onModelAdded);
       },
       onModelAdded: function(addedModel) {
-        var newNodeElement = new NodeElement({ model: addedModel });
-        newNodeElement.render();
+        var newNodeview = new NodeView({ model: addedModel });
+        newNodeview.render();
       }
     });
     
-    //
-    //-- Regions
-    //
-    
-    AppRegion = new Backbone.Marionette.Region({
-      el: "#svgwrapper"
+    JSONView = Backbone.Marionette.ItemView.extend({
+      //-- View to render JSON
+      collection: NodeCollection,
+      initialize: function() {
+        this.collection.bind('add', this.render);
+        this.collection.bind('remove', this.render);
+      },
+      template : function(serialized_data) {
+        var jsondata = Cure.prettyPrint(serialized_data);
+        return _.template("<% print(args.jsondata); %>", {jsondata : jsondata,}, {variable: 'args'});
+      }
     });
+
     //
     //-- Utilities / Helpers
     //
 
     //-- Pretty Print JSON.
-    //-- @Karthik do you have a reference/source for this function?
-    function prettyPrint(json) {
+    //-- Ref : http://stackoverflow.com/questions/4810841/json-pretty-print-using-javascript
+    Cure.prettyPrint = function (json) {
       if (typeof json != 'string') {
            json = JSON.stringify(json, undefined, 2);
       }
@@ -171,24 +178,24 @@
     //
     //-- Get JSON from d3 to BackBone
     //
-    function updatepositions()
+    Cure.updatepositions = function ()
     {
-      var d3nodes = cluster.nodes(network_coll.toJSON()[0]);
+      var d3nodes = Cure.cluster.nodes(Cure.NodeCollection.toJSON()[0]);
       d3nodes.forEach(function(d) { d.y = d.depth * 130 ;});
       d3nodes.forEach(function(d) {
         d.x0 = d.x;
         d.y0 = d.y;
       });
-      for(var temp in network_coll["models"])
+      for(var temp in Cure.NodeCollection["models"])
       {
         for(var innerTemp in d3nodes)
         {
-          if(String(d3nodes[innerTemp].name)==String(network_coll["models"][temp].get('name')))
+          if(String(d3nodes[innerTemp].name)==String(Cure.NodeCollection["models"][temp].get('name')))
           {
-            network_coll["models"][temp].set("x",d3nodes[innerTemp].x);
-            network_coll["models"][temp].set("y",d3nodes[innerTemp].y);
-            network_coll["models"][temp].set("x0",d3nodes[innerTemp].x0);
-            network_coll["models"][temp].set("y0",d3nodes[innerTemp].y0);   
+            Cure.NodeCollection["models"][temp].set("x",d3nodes[innerTemp].x);
+            Cure.NodeCollection["models"][temp].set("y",d3nodes[innerTemp].y);
+            Cure.NodeCollection["models"][temp].set("x0",d3nodes[innerTemp].x0);
+            Cure.NodeCollection["models"][temp].set("y0",d3nodes[innerTemp].y0);   
           }
         }
       }  
@@ -197,14 +204,14 @@
     //
     //-- Function to delete all children of a node
     //
-    function delete_all_children(seednode)
+    Cure.delete_all_children = function (seednode)
     {
       var children = seednode.get('children');
       if(seednode.get('children').length>0)
       {
         for(var temp in children.models)
         {
-          delete_all_children(children.models[temp]);
+          Cure.delete_all_children(children.models[temp]);
           children.models[temp].destroy();
         }
       }
@@ -213,28 +220,28 @@
     //
     //-- Render d3 Network
     //
-    function render_network(dataset)
+    Cure.render_network = function(dataset)
     {
-      var nodes = cluster.nodes(dataset),
-          links = cluster.links(nodes);
+      var nodes = Cure.cluster.nodes(dataset),
+          links = Cure.cluster.links(nodes);
       nodes.forEach(function(d) { d.y = d.depth * 130; });
-      var link = svg.selectAll(".link")
+      var link = Cure.svg.selectAll(".link")
         .data(links);
       link.enter()
         .insert("svg:path", "g")
         .attr("class", "link")
         .attr("d", function(d) {
           var o = {x: dataset.x0, y: dataset.y0};
-          return diagonal({source: o, target: o});
+          return Cure.diagonal({source: o, target: o});
         });
       link.transition()
-        .duration(duration)
-        .attr("d", diagonal);
+        .duration(Cure.duration)
+        .attr("d", Cure.diagonal);
       link.exit().transition()
-        .duration(duration)
+        .duration(Cure.duration)
         .attr("d", function(d) {
           var o = {x: dataset.x, y: dataset.y};
-          return diagonal({source: o, target: o});
+          return Cure.diagonal({source: o, target: o});
         })
       .remove();
       nodes.forEach(function(d) {
@@ -246,28 +253,40 @@
     //
     //-- App init!
     //
-    var width = $("#svgwrapper").width(),
-        height = $("#svgwrapper").height(),
-        duration = 500,
-        cluster = d3.layout.tree()
-                    .size([width, height]),
-        diagonal = d3.svg.diagonal()
+        
+    Cure.addInitializer(function(options){
+      //Declaring D3 Variables
+      Cure.width = $("#svgwrapper").width(),
+      Cure.height = $("#svgwrapper").height(),
+      Cure.duration = 500,
+      Cure.cluster = d3.layout.tree()
+                    .size([Cure.width, Cure.height]),
+      Cure.diagonal = d3.svg.diagonal()
                     .projection(function(d) { return [d.x, d.y]; });
-        svg = d3.select("svg").attr("width", width)
-                .attr("height", height)
+      Cure.svg = d3.select("svg").attr("width", Cure.width)
+                .attr("height", Cure.height)
                 .append("svg:g")
                 .attr("transform", "translate(0,40)");
-    var $json_structure = $('#json_structure'),
-        network_coll = new NodeCollection;
-        MyNodeList = new NodeList({ collection: network_coll });
+                
+      
+      Cure.NodeCollection = new NodeCollection();
+      Cure.NodeCollectionView = new NodeCollectionView({ collection: Cure.NodeCollection }),
+      Cure.JSONView = new JSONView({ collection: Cure.NodeCollection });
+      
+      //Assign View to Region
+      Cure.addRegions({
+        TreeRegion: "#svgwrapper",
+        JsonRegion: "#json_structure"
+      });
+      Cure.TreeRegion.show(Cure.NodeCollectionView);
+      Cure.JsonRegion.show(Cure.JSONView);
+        
+      //Add Root Node to Collection
+      Cure.RootNode = new Node({'name':'ROOT'})
+      Cure.branch = 1;
+    });
     
-    //Assign View to Region
-    AppRegion.show(MyNodeList);
-    
-    //Add Model to Collection
-    var node = new Node({'name':'ROOT'})
-        branch = 1;
-    
+    Cure.start();
     
     //-- TASKS / IDEAS:
     //-- Might be fun to have a 'autogenerate network with X nodes and X tiers' random function, not exactly
@@ -276,8 +295,8 @@
     //-- To note, please look at the formatting differences I made, we want to make sure the code says clean (and to help with the fact that I need to read it)
     //-- (WILL DO)
 
-    //-- (TODO) Question to ask yourself about network_coll.counter, do you really need it? Hint: http://puff.me.uk/ss/B0DvC.png.
-    //-- (DONE) - Used network_coll.length to monitor number of models in the collection. I just have to ask, what is puff.me.uk? Some ftp server?
+    //-- (TODO) Question to ask yourself about Cure.NodeCollection.counter, do you really need it? Hint: http://puff.me.uk/ss/B0DvC.png.
+    //-- (DONE) - Used Cure.NodeCollection.length to monitor number of models in the collection. I just have to ask, what is puff.me.uk? Some ftp server?
     //-- ALMOST THERE
     //-- (DONE)
 

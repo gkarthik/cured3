@@ -12,18 +12,19 @@
     <script type="text/javascript" src="./js/d3.v3.js" charset="utf-8">></script>
   </head>
   <body>
-  <div class="container">
-  <div class="row">
-    <div class="span3">
-       <h2>JSON</h2>
-       <div id='json_structure'></div>
+    <div class="container">
+      <div class="row">
+        <div class="span3">
+          <h2>JSON</h2>
+          <div id='json_structure'></div>
+        </div>
+        <div class="span9">
+          <div id="svgwrapper"></div>
+          <svg id="networkwrapper"></svg>
+        </div>
+      </div>
     </div>
-    <div class="span9">
-      <div id="svgwrapper"></div>
-      <svg id="networkwrapper"></svg>
-    </div>
-  </div>
-  </div>
+
   <script id="nodeTemplate" type="text/template">
     <span class="name">
       <%= name %>
