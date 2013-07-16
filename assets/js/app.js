@@ -1,4 +1,4 @@
- //
+    //
     //-- Defining our collections
     //
     NodeCollection = Backbone.Collection.extend({
@@ -53,17 +53,15 @@
     });
 
     //
-    //-- Defining our templates
-    //
-    var html = $("#nodeTemplate").html(),
-        nodeTemplate = _.template(html);
-
-    //
     //-- Defining our views
     //
-    NodeElement = Backbone.View.extend({
+    NodeElement = Backbone.Marionette.ItemView.extend({
       //-- View to manipulate each single node
       tagName: 'div',
+      ui: {
+        input: ".edit"
+      },
+      template: "#nodeTemplate",
       events: {
         'click button.addchildren'  : 'addChildren',
         'click button.delete'       : 'remove',
@@ -72,21 +70,19 @@
         'blur .edit' : 'close'
       },
       initialize: function(){
-        _.bindAll(this, 'render', 'remove', 'addChildren');
+        _.bindAll(this, 'remove', 'addChildren');
         this.model.bind('change', this.render);
         this.model.bind('remove', this.remove);
+        this.$el.addClass("node");
       },
-      render: function(){
-        $(this.el).html(nodeTemplate({'name':this.model.get('name')}));
+      onBeforeRender: function(){
         if(this.model.get('x0')!=undefined)
         {
           $(this.el).css({'margin-left': this.model.get('x0')+"px", 
                           'margin-top': this.model.get('y0')+"px"});          
         }    
-        $(this.el).stop(false,true).animate({'margin-left': (this.model.get('x')-(($(this.el).width())/2))+"px", 
-                                             'margin-top': (this.model.get('y')+10)+"px"},"slow");        
-        this.input = this.$('.edit');
-        return this;
+        $(this.el).stop(true,false).animate({'margin-left': (this.model.get('x')-(($(this.el).width())/2))+"px", 
+                                             'margin-top': (this.model.get('y')+10)+"px"},500);        
       },
       updateOnEnter: function(e){
         if(e.which == 13){
@@ -94,7 +90,7 @@
         }
       },
       close: function(){
-        var value = this.input.val().trim();
+        var value = this.ui.input.val().trim();
         if(value) {
           this.model.set('name', value);
         }
@@ -102,7 +98,7 @@
       },
       edit: function(){
         this.$el.addClass('editing');
-        this.input.focus();
+        this.ui.input.focus();
       },
       remove: function(){
         if(network_coll.length > 1) {
@@ -125,15 +121,15 @@
       }
     });
 
-    NodeList = Backbone.View.extend({
+    NodeList = Backbone.Marionette.CollectionView.extend({
       //-- View to manipulate and display list of all nodes in collection
-      el: $('#svgwrapper'),
+      itemView: NodeElement,
       initialize: function() {
         this.collection.bind('add', this.onModelAdded);
       },
       onModelAdded: function(addedModel) {
         var newNodeElement = new NodeElement({ model: addedModel });
-        $('#svgwrapper',this.el).append(newNodeElement.render().el);
+        newNodeElement.render();
       }
     });
 
@@ -141,8 +137,8 @@
     //-- Utilities / Helpers
     //
 
-//-- Pretty Print JSON.
-//-- @Karthik do you have a reference/source for this function?
+    //-- Pretty Print JSON.
+    //-- @Karthik do you have a reference/source for this function?
     function prettyPrint(json) {
       if (typeof json != 'string') {
            json = JSON.stringify(json, undefined, 2);
@@ -255,11 +251,16 @@
                 .append("svg:g")
                 .attr("transform", "translate(0,40)");
     var $json_structure = $('#json_structure'),
-        network_coll = new NodeCollection,
-        MyNodeList = new NodeList({ collection: network_coll }),
-        node = new Node({'name':'ROOT'})
+        network_coll = new NodeCollection;
+        MyNodeList = new NodeList({ collection: network_coll });
+        AppRegion = new Backbone.Marionette.Region({
+          el: "#svgwrapper"
+        });
+    AppRegion.show(MyNodeList);
+    var node = new Node({'name':'ROOT'})
         branch = 1;
-
+    
+    
     //-- TASKS / IDEAS:
     //-- Might be fun to have a 'autogenerate network with X nodes and X tiers' random function, not exactly
     //-- relevant to the exact task at hand but might make you more comertable with how to leverage this collection/model structure
@@ -287,11 +288,14 @@
     //-- (DONE)
 
     //-- (TODO) - On click of d3 node, get the model repersentation of that in Backbone collection
+    //-- (DONE - ItemView Linked with every node)
 
     //-- (TODO) - input event for name update
 
     //-- (TODO) - attributes to literal objects
-
+    //-- (DONE) - Most of the d3 removed since nodes are rendered by Marionette.
+    
     //-- (TODO) - question of d3 >> search through backbone || backbone with paths to draw networks
+    //-- (DONE) - D3 renders Paths. BackBone renders the nodes.
 
     //-- AWESOME START!
