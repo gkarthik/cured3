@@ -146,7 +146,7 @@
         'click .showjson': 'ShowJSON',
         'blur .jsonview_data' : 'HideJSON'
       },
-      tagName: 'li',
+      tagName: 'tr',
       initialize: function() {
         this.model.bind('add:children', this.render);
         this.model.bind('change:name', this.render);

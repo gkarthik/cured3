@@ -73,7 +73,9 @@ textarea.jsonview_data{
   float:none;
 }
 
-#json_structure li
+#json_structure textarea
 {
-  margin-top:10px;
+  z-index: 4;
+  position:absolute;
+  margin-top: 0px;
 }

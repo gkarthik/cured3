@@ -16,7 +16,7 @@
       <div class="row">
         <div class="span3">
           <h2>JSON</h2>
-          <ul id='json_structure'></ul>
+          <table class="table table-hover" id='json_structure'></table>
         </div>
         <div class="span9">
           <div id="svgwrapper"></div>
@@ -25,9 +25,9 @@
       </div>
     </div>
   <script id="JSONtemplate" type="text/template">
-      <span class="jsonview_name"><%= args.name %></span>
-      <span><button class="btn btn-primary btn-small showjson" >Show JSON</button></span>
-      <textarea class="jsonview_data"><% print (args.jsondata); %></textarea>
+      <td><span class="jsonview_name"><%= args.name %></span></td>
+      <td><span><button class="btn btn-link showjson" >Show JSON</button></span></td>
+      <td><textarea class="jsonview_data"><% print (args.jsondata); %></textarea></td>
   </script>
   <script id="nodeTemplate" type="text/template">
     <span class="name">
