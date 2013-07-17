@@ -16,7 +16,7 @@
       <div class="row">
         <div class="span3">
           <h2>JSON</h2>
-          <div id='json_structure'></div>
+          <ul id='json_structure'></ul>
         </div>
         <div class="span9">
           <div id="svgwrapper"></div>
@@ -24,7 +24,11 @@
         </div>
       </div>
     </div>
-
+  <script id="JSONtemplate" type="text/template">
+      <span class="jsonview_name"><%= args.name %></span>
+      <span><button class="btn btn-primary btn-small showjson" >Show JSON</button></span>
+      <textarea class="jsonview_data"><% print (args.jsondata); %></textarea>
+  </script>
   <script id="nodeTemplate" type="text/template">
     <span class="name">
       <%= name %>

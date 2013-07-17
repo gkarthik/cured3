@@ -59,3 +59,21 @@ input.edit{
   background: steelblue;
   color: #FFF;
 }
+
+textarea.jsonview_data{
+  display:none;
+  position:absolute;	
+  width:300px;
+  height: 300px;
+  margin-top:10px;
+}
+
+.showjson
+{
+  float:none;
+}
+
+#json_structure li
+{
+  margin-top:10px;
+}

@@ -32,8 +32,7 @@
         }
       },
       url: "./",
-      initialize: function() {
-        Cure.NodeCollection.add(this);      
+      initialize: function() {   
         this.bind("add:children", function() {
           Cure.updatepositions();
           Cure.render_network(Cure.NodeCollection.toJSON()[0]);          
@@ -41,6 +40,7 @@
         this.bind("change:name", function() {
           Cure.render_network(Cure.NodeCollection.toJSON()[0]);
         });          
+        Cure.NodeCollection.add(this);
       },
       relations: [{
         type: Backbone.HasMany,
@@ -134,19 +134,47 @@
       }
     });
     
-    JSONView = Backbone.Marionette.ItemView.extend({
+    var template_html = $("#JSONtemplate").html();
+    JSONItemView = Backbone.Marionette.ItemView.extend({
       //-- View to render JSON
-      collection: NodeCollection,
-      initialize: function() {
-        this.collection.bind('add', this.render);
-        this.collection.bind('remove', this.render);
+      model: Node,
+      ui:{
+        jsondata: ".jsonview_data",
+        showjson: ".showjson"
       },
-      template : function(serialized_data) {
-        var jsondata = Cure.prettyPrint(serialized_data);
-        return _.template("<% print(args.jsondata); %>", {jsondata : jsondata,}, {variable: 'args'});
+      events:{
+        'click .showjson': 'ShowJSON',
+        'blur .jsonview_data' : 'HideJSON'
+      },
+      tagName: 'li',
+      initialize: function() {
+        this.model.bind('add:children', this.render);
+        this.model.bind('change:name', this.render);
+      },
+      template : function(serialized_model) {
+        var name = serialized_model.name;
+        var jsondata = Cure.prettyPrint(serialized_model);
+        return _.template(template_html, {name : name,jsondata : jsondata}, {variable: 'args'});
+      },
+      ShowJSON: function(){
+        this.ui.showjson.addClass("disabled");
+        this.ui.jsondata.css({'display':'block'});
+        this.ui.jsondata.focus();
+      },
+      HideJSON: function(){
+        this.ui.jsondata.css({'display':'none'});
+        this.ui.showjson.removeClass("disabled");
       }
     });
 
+    JSONCollectionView = Backbone.Marionette.CollectionView.extend({
+      //-- View to render JSON
+      itemView: JSONItemView, 
+      collection: NodeCollection,
+      initialize: function() {
+        this.collection.bind('remove', this.render);
+      }
+    });
     //
     //-- Utilities / Helpers
     //
@@ -171,7 +199,7 @@
         } else if (/null/.test(match)) {
             cls = 'null';
         }
-        return '<span class="' + cls + '">' + match + '</span>';
+        return match;
       });
     }
     
@@ -271,7 +299,7 @@
       
       Cure.NodeCollection = new NodeCollection();
       Cure.NodeCollectionView = new NodeCollectionView({ collection: Cure.NodeCollection }),
-      Cure.JSONView = new JSONView({ collection: Cure.NodeCollection });
+      Cure.JSONCollectionView = new JSONCollectionView({ collection: Cure.NodeCollection });
       
       //Assign View to Region
       Cure.addRegions({
@@ -279,7 +307,7 @@
         JsonRegion: "#json_structure"
       });
       Cure.TreeRegion.show(Cure.NodeCollectionView);
-      Cure.JsonRegion.show(Cure.JSONView);
+      Cure.JsonRegion.show(Cure.JSONCollectionView);
         
       //Add Root Node to Collection
       Cure.RootNode = new Node({'name':'ROOT'})
