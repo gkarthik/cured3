@@ -76,7 +76,7 @@
         _.bindAll(this, 'remove', 'addChildren');
         this.model.bind('change', this.render);
         this.model.bind('remove', this.remove);
-        this.$el.addClass("node");
+        this.$el.addClass("node");        
       },
       onBeforeRender: function(){
         if(this.model.get('x0')!=undefined)
@@ -118,7 +118,7 @@
         } else {
           name = this.model.get('name')+"."+this.model.get('children').length;
         }
-        var newNode = new Node({'name' : name, 'id':'node'+name});
+        var newNode = new Node({'name' : name, 'id':'node'+name, "options": { "content": "Hello World!", value: Math.random()*100 }});
         newNode.parentNode = this.model;
         this.model.get('children').add(newNode);
       }
@@ -159,7 +159,7 @@
         'click .editdone': 'doneEdit'
       },
       tagName: "tr",
-      initialize: function() {
+      initialize: function() {        
         this.model.bind('add:children', this.render);
         this.model.bind('change', this.render);
         this.model.on('change:edit', function () {
