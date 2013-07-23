@@ -17,6 +17,12 @@ svg{
   height:100%;
 }
 
+.d3edit
+{
+  display:inline;
+  position:absolute;
+}
+
 input.edit{
   display:none;
   padding:0px;
@@ -25,13 +31,13 @@ input.edit{
   text-align:center;
 }
 
-.editing .name {
+.editing .attrvalue {
   display: none; /* Hides label text when .editing*/
 }
 
 .editing input.edit {
-  display: inline;
-  position:absolute; /* Shows input text box when .editing*/
+  display:block;
+  width:100%;  
 }
 
 .node {
@@ -78,4 +84,20 @@ textarea.jsonview_data{
   z-index: 4;
   position:absolute;
   margin-top: 0px;
+}
+
+.editnode
+{
+  background:#dff0d8;	
+}
+
+#json_structure .attrvalue
+{
+  width:164px;
+  margin-bottom:12px;
+}
+
+#json_structure .edit
+{
+  text-align: left;
 }

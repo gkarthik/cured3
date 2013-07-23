@@ -26,14 +26,36 @@
     </div>
   <script id="JSONtemplate" type="text/template">
       <td><span class="jsonview_name"><%= args.name %></span></td>
-      <td><span><button class="btn btn-link showjson" >Show JSON</button></span></td>
+      <td><span><button class="btn btn-link showattr" >Edit</button></span></td>
+      <td><span><button class="btn btn-link showjson" >JSON</button></span></td>
       <td><textarea class="jsonview_data"><% print (args.jsondata); %></textarea></td>
   </script>
+  <script id="Attrtemplate" type="text/template">
+    <td colspan="3">
+    <ul class="unstyled">
+      <li>
+            <span class="attredit">
+              <label class="label label-info">Name</label><br /><label class="attrvalue"><%= args.name %></label>
+              <input class="input-medium edit" id="name" type="text" value="<%= args.name %>" />
+            </span>
+      </li>
+      <% for(var option in args.options) {%>
+        <li>
+            <span class="attredit">
+              <label class="label label-info"><%= option %></label><br /><label class="attrvalue"> <%= args.options[option] %></label>
+              <input class="input-medium edit modeloption" id="<%= option %>" type="text" value="<%= args.options[option] %>" />
+            </span>
+        </li>
+      <% } %>
+      <li><button class="btn btn-link editdone" >Done</button></li>
+    </ul>
+    </td>
+  </script>
   <script id="nodeTemplate" type="text/template">
-    <span class="name">
+    <span class="name attrvalue">
       <%= name %>
     </span>
-    <input type="text" class="edit" value="<%- name %>">
+    <input type="text" class="edit d3edit" value="<%- name %>">
     <button class="btn btn-small btn-link addchildren" type="button">
       <i class="icon-plus-sign"></i>
     </button>

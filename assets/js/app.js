@@ -28,19 +28,21 @@
       defaults : {
         'name' : '',
         'options' : {
-          content:''
-        }
+          content:'Hello World!',
+          value: '0'
+        },
+        edit : 0
       },
       url: "./",
-      initialize: function() {   
+      initialize: function() { 
         this.bind("add:children", function() {
           Cure.updatepositions();
           Cure.render_network(Cure.NodeCollection.toJSON()[0]);          
         });
-        this.bind("change:name", function() {
+        this.bind("change", function() {
           Cure.render_network(Cure.NodeCollection.toJSON()[0]);
         });          
-        Cure.NodeCollection.add(this);
+        Cure.NodeCollection.add(this);        
       },
       relations: [{
         type: Backbone.HasMany,
@@ -116,7 +118,7 @@
         } else {
           name = this.model.get('name')+"."+this.model.get('children').length;
         }
-        var newNode = new Node({'name' : name, 'id':'node'+name, 'options':{ 'content': '' }});
+        var newNode = new Node({'name' : name, 'id':'node'+name});
         newNode.parentNode = this.model;
         this.model.get('children').add(newNode);
       }
@@ -134,27 +136,60 @@
       }
     });
     
-    var template_html = $("#JSONtemplate").html();
+    var shownode_html = $("#JSONtemplate").html();
+    var nodeedit_html = $('#Attrtemplate').html();
     JSONItemView = Backbone.Marionette.ItemView.extend({
       //-- View to render JSON
       model: Node,
       ui:{
         jsondata: ".jsonview_data",
-        showjson: ".showjson"
+        showjson: ".showjson",
+        attreditwrapper: ".attreditwrapper",
+        attredit: ".attredit",
+        input: ".edit",
+        key: ".attrkey",
       },
       events:{
         'click .showjson': 'ShowJSON',
-        'blur .jsonview_data' : 'HideJSON'
+        'blur .jsonview_data' : 'HideJSON',
+        'click .showattr': 'ShowAttr',
+        'dblclick .attredit': 'editAttr',
+        'keypress .edit' : 'onEnter',
+        'blur .edit' : 'updateAttr',
+        'click .editdone': 'doneEdit'
       },
-      tagName: 'tr',
+      tagName: "tr",
       initialize: function() {
         this.model.bind('add:children', this.render);
-        this.model.bind('change:name', this.render);
+        this.model.bind('change', this.render);
+        this.model.on('change:edit', function () {
+          if (this.model.get('edit') != 0) 
+          {
+            this.$el.addClass('editnode');
+          }
+          else
+          {
+            this.$el.removeClass('editnode');
+          }
+      }, this);
       },
       template : function(serialized_model) {
         var name = serialized_model.name;
+        var options = serialized_model.options;
         var jsondata = Cure.prettyPrint(serialized_model);
-        return _.template(template_html, {name : name,jsondata : jsondata}, {variable: 'args'});
+        if(serialized_model.edit == 0)
+        {
+          return _.template(shownode_html, {name : name,jsondata : jsondata}, {variable: 'args'});  
+        }
+        else
+        {
+          return _.template(nodeedit_html, {name : name,options : options}, {variable: 'args'});
+        }
+      },
+      editAttr: function(e){
+        var field = $(e.currentTarget);
+        field.addClass("editing");
+        $(".edit", field).focus();
       },
       ShowJSON: function(){
         this.ui.showjson.addClass("disabled");
@@ -164,6 +199,38 @@
       HideJSON: function(){
         this.ui.jsondata.css({'display':'none'});
         this.ui.showjson.removeClass("disabled");
+      },
+      onEnter: function(e){
+        if(e.which == 13){
+          this.updateAttr($(e.currentTarget));
+        }
+      },
+      updateAttr: function(field){
+        if(field instanceof jQuery.Event)
+        {
+          field = $(field.currentTarget);
+        }        
+        console.log(field);
+        if(field.hasClass("modeloption"))
+        {
+          var data = {}; 
+          data["options"] = this.model.get('options');            
+          data["options"][field.attr('id')] = field.val();
+          this.model.set(data); 
+        }
+        else
+        {
+          var data = {};
+          data[field.attr('id')] = field.val();
+          this.model.set(data);
+        }
+        this.render();
+      },
+      ShowAttr: function(){
+        this.model.set('edit',1);
+      },
+      doneEdit: function(){
+        this.model.set('edit',0);
       }
     });
 
@@ -352,5 +419,9 @@
     
     //-- (TODO) - question of d3 >> search through backbone || backbone with paths to draw networks
     //-- (DONE) - D3 renders Paths. BackBone renders the nodes.
-
+    
+    //-- (TODO) - Edit List with double click. On double click open up edit panel. Use Boolean value in node to show edit panel.
+    //-- (TODO) - Make decision tree with light weights.
+    //-- (TODO) - className to highlight nodes.
+    //-- (TODO) - .bind to .bondTo
     //-- AWESOME START!
