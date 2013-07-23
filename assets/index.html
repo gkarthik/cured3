@@ -16,6 +16,7 @@
       <div class="row">
         <div class="span3">
           <h2>JSON</h2>
+          <button id="traverse" class="btn btn-primary btn-large">Traverse Tree</button>
           <table class="table table-hover" id='json_structure'></table>
         </div>
         <div class="span9">
@@ -52,6 +53,9 @@
     </td>
   </script>
   <script id="nodeTemplate" type="text/template">
+    <span class="label label-success">
+      <%= options.value %>
+    </span>    
     <span class="name attrvalue">
       <%= name %>
     </span>

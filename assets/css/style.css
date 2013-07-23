@@ -101,3 +101,22 @@ textarea.jsonview_data{
 {
   text-align: left;
 }
+
+.highlight
+{
+  box-shadow: 0px 0px 10px 2px red;
+}
+
+#traverse
+{
+  margin-bottom:10px;
+  padding:5px;
+}
+
+.node .label
+{
+  position:absolute;
+  margin-top:-25px;
+  width:80%;
+  text-align:center;
+}

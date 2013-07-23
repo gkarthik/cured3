@@ -25,13 +25,14 @@
     //-- Defining our models
     //
     Node = Backbone.RelationalModel.extend({
-      defaults : {
+      defaults: {
         'name' : '',
         'options' : {
           content:'Hello World!',
           value: '0'
         },
-        edit : 0
+        edit: 0,
+        highlight: 0 
       },
       url: "./",
       initialize: function() { 
@@ -61,6 +62,7 @@
     NodeView = Backbone.Marionette.ItemView.extend({
       //-- View to manipulate each single node
       tagName: 'div',
+      className: 'node',
       ui: {
         input: ".edit"
       },
@@ -75,8 +77,17 @@
       initialize: function(){
         _.bindAll(this, 'remove', 'addChildren');
         this.model.bind('change', this.render);
-        this.model.bind('remove', this.remove);
-        this.$el.addClass("node");        
+        this.model.bind('remove', this.remove);        
+        this.model.on('change:highlight', function () {
+          if (this.model.get('highlight') != 0) 
+          {
+            this.$el.addClass('highlight');
+          }
+          else
+          {
+            this.$el.removeClass('highlight');
+          }
+      }, this);
       },
       onBeforeRender: function(){
         if(this.model.get('x0')!=undefined)
@@ -118,7 +129,7 @@
         } else {
           name = this.model.get('name')+"."+this.model.get('children').length;
         }
-        var newNode = new Node({'name' : name, 'id':'node'+name, "options": { "content": "Hello World!", value: Math.random()*100 }});
+        var newNode = new Node({'name' : name, 'id':'node'+name, "options": { "content": "Hello World!", value: Math.floor(Math.random()*100) }});
         newNode.parentNode = this.model;
         this.model.get('children').add(newNode);
       }
@@ -312,6 +323,34 @@
       }
     }
     
+    Cure.traverseTree = function(rootNode)
+    {
+      rootNode.set("highlight",1);
+      var childnodes = rootNode.get('children').models;
+      if(childnodes.length > 0)
+      {
+        var min_index = 0;
+        var min_value = 100;
+        for(var temp in childnodes)
+        {
+          if(childnodes[temp].get('options').value < min_value)
+          {
+            min_value = childnodes[temp].get('options').value;
+            min_index = temp;
+          }
+        }
+        console.log(min_index);
+        window.setTimeout(function(){
+          Cure.traverseTree(childnodes[min_index]);          
+        },1000);
+      }
+      else
+      {
+        $("#traverse").html("Traverse Tree");
+        $("#traverse").removeClass("disabled");
+      }
+    }
+    
     //
     //-- Render d3 Network
     //
@@ -379,6 +418,11 @@
       //Add Root Node to Collection
       Cure.RootNode = new Node({'name':'ROOT'})
       Cure.branch = 1;
+      $("#traverse").click(function(){
+        Cure.traverseTree(Cure.NodeCollection.models[0]);
+        $(this).html("Traversing...");
+        $(this).addClass("disabled");
+      });
     });
     
     Cure.start();
